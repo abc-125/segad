@@ -1,0 +1,7 @@
+pandas
+opencv-python
+xgboost
+scikit-learn
+lightning>2,<2.2.0
+gdown==4.7.1
+chardet==5.2.0
