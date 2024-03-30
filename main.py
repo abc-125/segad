@@ -2,15 +2,11 @@ import argparse
 import logging
 import os
 import sys
-import gdown
-import anomalib.data.image.visa as anomalib_visa
-import shutil
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 
 from SegAD import SegAD
-from efficient_ad.test_visa import run as efficient_ad_run
 
 
 logger = logging.getLogger()
@@ -39,31 +35,12 @@ SEEDS = [333, 576, 725, 823, 831, 902, 226, 598, 874, 589]
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--visa_path", type=str, default="./data/visa", help="Path to the the VisA dataset")
-    parser.add_argument("--models_path", type=str, default="./data/models_efficient_ad",
-                        help="Path to the EfficientAD models")
-    parser.add_argument("--segm_path", type=str, default="./data/segm_maps", help="Path to the segmentation maps")
+    parser.add_argument("--segm_path", type=str, default="./data/visa_segm", help="Path to the segmentation maps")
     parser.add_argument("--output_path", type=str, default="./data/efficient_ad_output",
                         help="Path to the anomaly maps and dataframes")
     parser.add_argument("--results_path", type=str, default="./results", help="Path to the results")
     parser.add_argument("--bad_parts", type=int, default=10, help="Number of bad parts to use for training")
     return parser.parse_args()
-
-
-def prepare_visa():
-    # Download and split the VisA dataset
-    if not os.path.exists(args.visa_path) or not os.listdir(args.visa_path):
-        visa = anomalib_visa.Visa(root=args.visa_path, image_size=(256, 256))
-        visa.prepare_data()
-
-        # Remove unused folders
-        if "visa_pytorch" in os.listdir(args.visa_path):
-            logger.info("Removing unused directories for VisA")
-            for cls in CATEGORIES:
-                shutil.rmtree(os.path.join(args.visa_path, cls))
-                shutil.move(os.path.join(args.visa_path, "visa_pytorch", cls), os.path.join(args.visa_path, cls))
-            shutil.rmtree(os.path.join(args.visa_path, "split_csv"))
-            shutil.rmtree(os.path.join(args.visa_path, "visa_pytorch"))
 
 
 def segad_run():
@@ -125,14 +102,15 @@ def segad_run():
                 results_detailed[cls + str(seed)] = (cls, seed, metrics.roc_auc_score(df_testing.label, predictions))
 
             # Calculate mean metrics for all seeds
-            auroc = round(auroc / len(SEEDS), 3) * 100
-            fpr95tpr = round(fpr95tpr / len(SEEDS), 3) * 100
-            logger.info("SegAD, {}, mean results for all seeds. Cl. AUROC: {}, FPR@95TPR: {}".format(cls, auroc, fpr95tpr))
-            results[cls] = (auroc, fpr95tpr)
+            auroc = auroc / len(SEEDS) * 100
+            fpr95tpr = fpr95tpr / len(SEEDS) * 100
+            logger.info("SegAD, {}, mean results for all seeds. Cl. AUROC: {}, FPR@95TPR: {}"
+                        .format(cls, round(auroc, 1), round(fpr95tpr, 1)))
+            results[cls] = (round(auroc, 1), round(fpr95tpr, 1))
             mean_auroc = mean_auroc + auroc
             mean_fpr95tpr = mean_fpr95tpr + fpr95tpr
-            auroc_an_det = round(auroc_an_det / len(SEEDS), 3) * 100
-            fpr95tpr_an_det = round(fpr95tpr_an_det / len(SEEDS), 3) * 100
+            auroc_an_det = auroc_an_det / len(SEEDS) * 100
+            fpr95tpr_an_det = fpr95tpr_an_det / len(SEEDS) * 100
             mean_auroc_an_det = mean_auroc_an_det + auroc_an_det
             mean_fpr95tpr_an_det = mean_fpr95tpr_an_det + fpr95tpr_an_det
 
@@ -149,12 +127,11 @@ def segad_run():
         logger.info("Finished SegAD training and inference")
         logger.info("EfficientAD, mean Cl. AUROC: {}, mean FPR@95TPR: {}".format(mean_auroc_an_det, mean_fpr95tpr_an_det))
         logger.info("SegAD, mean Cl. AUROC: {}, mean FPR@95TPR: {}".format(mean_auroc, mean_fpr95tpr))
+    else:
+        logger.info("Folder with results exists and not empty.")
 
 
 if __name__ == '__main__':
     args = get_args()
-
-    prepare_visa()
-    efficient_ad_run(args, CATEGORIES)
 
     segad_run()

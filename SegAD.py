@@ -1,12 +1,9 @@
 import os
 import string
 
-import pandas as pd
 import numpy as np
-import cv2
 from scipy.stats import kurtosis, skew
 from xgboost import XGBClassifier
-import skimage.morphology as morphology
 
 
 class SegAD:
@@ -65,7 +62,6 @@ TODO
                                  "bad" if df.label else "good",
                                  os.path.basename(df.an_map_path))
         mask = np.load(segm_path)
-        mask = morphology.convex_hull_image(mask)
 
         # Extract features
         anomaly_map = np.load(df.an_map_path)
