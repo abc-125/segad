@@ -38,7 +38,7 @@ def get_args():
     parser.add_argument("--model", type=str, default="efficient_ad", help="Name of the base anomaly detection model")
     parser.add_argument("--dataset", type=str, default="visa", help="Name of the dataset")
     parser.add_argument("--segm_path", type=str, default="./data/visa_segm", help="Path to the segmentation maps")
-    parser.add_argument("--output_path", type=str, default="./data/efficient_ad_output",
+    parser.add_argument("--an_path", type=str, default="./data/anomaly_maps",
                         help="Path to the anomaly maps and dataframes")
     parser.add_argument("--results_path", type=str, default="./results", help="Path to the results")
     parser.add_argument("--bad_parts", type=int, default=10, help="Number of bad parts to use for training")
@@ -47,7 +47,7 @@ def get_args():
 
 def segad_run(full_results_path):
     if not os.path.exists(full_results_path) or not os.listdir(full_results_path):
-        logger.info("Started SegAD training and inference")
+        logger.info("Started SegAD + {} training and inference".format(args.model))
         num_components = {
             "candle": 2, "capsules": 2, "cashew": 2, "chewinggum": 2,
             "fryum": 2, "pipe_fryum": 2, "macaroni1": 2, "macaroni2": 2,
@@ -67,9 +67,10 @@ def segad_run(full_results_path):
             auroc_an_det = 0
             fpr95tpr_an_det = 0
 
-            df_training_all = pd.read_csv(os.path.join(args.output_path, cls, "df_training.csv"),
+            df_training_all = pd.read_csv(os.path.join(args.an_path, args.model, cls, "df_training.csv"),
                                           index_col=0).reset_index()
-            df_testing_all = pd.read_csv(os.path.join(args.output_path, cls, "df_test.csv"), index_col=0).reset_index()
+            df_testing_all = pd.read_csv(os.path.join(args.an_path, args.model, cls, "df_test.csv"),
+                                         index_col=0).reset_index()
             scale_pos_weight = len(df_training_all.index) / args.bad_parts
             num_comp_cls = num_components[cls]
 
@@ -107,7 +108,7 @@ def segad_run(full_results_path):
             # Calculate mean metrics for all seeds
             auroc = auroc / len(SEEDS) * 100
             fpr95tpr = fpr95tpr / len(SEEDS) * 100
-            logger.info("SegAD, {}, mean results for all seeds. Cl. AUROC: {}, FPR@95TPR: {}"
+            logger.info("{}, mean results for all seeds. Cl. AUROC: {}, FPR@95TPR: {}"
                         .format(cls, round(auroc, 1), round(fpr95tpr, 1)))
             results[cls] = (round(auroc, 1), round(fpr95tpr, 1))
             mean_auroc = mean_auroc + auroc
@@ -127,7 +128,7 @@ def segad_run(full_results_path):
         pd.DataFrame.from_dict(results_detailed, orient="index").to_csv(os.path.join(full_results_path,
                                                                                      "results_detailed.csv"))
 
-        logger.info("Finished SegAD training and inference")
+        logger.info("Finished SegAD + {} training and inference".format(args.model))
         logger.info("{}, mean Cl. AUROC: {}, mean FPR@95TPR: {}".format(args.model, mean_auroc_an_det,
                                                                         mean_fpr95tpr_an_det))
         logger.info("SegAD + {}, mean Cl. AUROC: {}, mean FPR@95TPR: {}".format(args.model, mean_auroc, mean_fpr95tpr))

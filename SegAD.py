@@ -7,10 +7,6 @@ from xgboost import XGBClassifier
 
 
 class SegAD:
-    """
-TODO
-    """
-
     def __init__(self, args, seed, scale_pos_weight, num_components) -> None:
         super().__init__()
         self.args = args
@@ -57,14 +53,18 @@ TODO
             df[part + "_mean"] = 0.0
 
     def get_features(self, df, cls):
-        # Get segmentation map
+        # Load segmentation map
         segm_path = os.path.join(self.args.segm_path, cls,
                                  "bad" if df.label else "good",
                                  os.path.basename(df.an_map_path))
         mask = np.load(segm_path)
 
-        # Extract features
-        anomaly_map = np.load(df.an_map_path)
+        # Load anomaly map and extract features
+        an_path = os.path.join(self.args.an_path, self.args.model, cls,
+                               "anomaly_maps",
+                               "bad" if df.label else "good",
+                               os.path.basename(df.an_map_path))
+        anomaly_map = np.load(an_path)
         for j, part in enumerate(self.components):
             selection = anomaly_map[mask == j]
             self.get_features_from_part(part, selection, df)
