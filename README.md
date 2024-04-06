@@ -37,4 +37,4 @@ Cl. AUROC (image-level) for SegAD with different sources of anomaly maps.
 
 ## Acknowledgement
 
-We use [EfficientAD](https://github.com/nelson1425/EfficientAD) and [Anomalib library](https://github.com/openvinotoolkit/anomalib/tree/main) for baseline anomaly detection models. We are thankful for their amazing work!
+We use [EfficientAD](https://github.com/nelson1425/EfficientAD) and [Anomalib](https://github.com/openvinotoolkit/anomalib/tree/main) for baseline anomaly detection models. We are thankful for their amazing work!
