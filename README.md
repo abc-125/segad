@@ -21,7 +21,7 @@ data
 ```
 
 ### Train and evaluate
-Only VisA dataset is available for now.
+Only VisA dataset is available for now. List of available models: `["efficient_ad", "rd4ad", "all_ad"]`. `"all_ad"` includes both EfficientAD and RD4AD.
 ```bash
 python main.py --model efficient_ad
 ```

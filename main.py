@@ -32,10 +32,13 @@ CATEGORIES = (
 # Seeds to reproduce results from the paper
 SEEDS = [333, 576, 725, 823, 831, 902, 226, 598, 874, 589]
 
+MODELS = ["efficient_ad", "rd4ad", "all_ad"]
+
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="efficient_ad", help="Name of the base anomaly detection model")
+    parser.add_argument("--model", type=str, default="efficient_ad", help="Name of the base anomaly detection model. "
+                                                                        "Options: {}".format(MODELS))
     parser.add_argument("--dataset", type=str, default="visa", help="Name of the dataset")
     parser.add_argument("--segm_path", type=str, default="./data/visa_segm", help="Path to the segmentation maps")
     parser.add_argument("--an_path", type=str, default="./data/anomaly_maps",
@@ -45,7 +48,7 @@ def get_args():
     return parser.parse_args()
 
 
-def segad_run(full_results_path):
+def segad_run(full_results_path, models_list):
     if not os.path.exists(full_results_path) or not os.listdir(full_results_path):
         logger.info("Started SegAD + {} training and inference".format(args.model))
         num_components = {
@@ -67,9 +70,9 @@ def segad_run(full_results_path):
             auroc_an_det = 0
             fpr95tpr_an_det = 0
 
-            df_training_all = pd.read_csv(os.path.join(args.an_path, args.model, cls, "df_training.csv"),
+            df_training_all = pd.read_csv(os.path.join(args.an_path, models_list[0], cls, "df_training.csv"),
                                           index_col=0).reset_index()
-            df_testing_all = pd.read_csv(os.path.join(args.an_path, args.model, cls, "df_test.csv"),
+            df_testing_all = pd.read_csv(os.path.join(args.an_path, models_list[0], cls, "df_test.csv"),
                                          index_col=0).reset_index()
             scale_pos_weight = len(df_training_all.index) / args.bad_parts
             num_comp_cls = num_components[cls]
@@ -84,7 +87,7 @@ def segad_run(full_results_path):
                 df_testing = pd.concat([df_testing_all.loc[df_testing_all.label == 0], df_testing_bad])
 
                 # Apply SegAD to the training and testing sets
-                segad = SegAD(args, seed, scale_pos_weight, num_comp_cls)
+                segad = SegAD(args, seed, scale_pos_weight, num_comp_cls, models_list)
                 df_training = df_training.apply(lambda row: segad.get_features(row, cls), axis=1)
                 segad.xgb.fit(df_training[segad.list_features], df_training.label)
                 df_testing = df_testing.apply(lambda row: segad.get_features(row, cls), axis=1)
@@ -133,10 +136,18 @@ def segad_run(full_results_path):
                                                                         mean_fpr95tpr_an_det))
         logger.info("SegAD + {}, mean Cl. AUROC: {}, mean FPR@95TPR: {}".format(args.model, mean_auroc, mean_fpr95tpr))
     else:
-        logger.info("Folder with results exists and not empty.")
+        raise ValueError("Folder with results exists and not empty.")
 
 
 if __name__ == '__main__':
     args = get_args()
+    if args.model not in MODELS:
+        raise ValueError("{} is no in the list of available models {}".format(args.model, MODELS))
+    if args.model == "all_ad":
+        models_list = MODELS[:-1]
+    else:
+        models_list = [args.model]
+
     full_results_path = os.path.join(args.results_path, args.dataset, args.model)
-    segad_run(full_results_path)
+
+    segad_run(full_results_path, models_list)
