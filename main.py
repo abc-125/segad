@@ -35,6 +35,8 @@ SEEDS = [333, 576, 725, 823, 831, 902, 226, 598, 874, 589]
 
 def get_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--model", type=str, default="efficient_ad", help="Name of the base anomaly detection model")
+    parser.add_argument("--dataset", type=str, default="visa", help="Name of the dataset")
     parser.add_argument("--segm_path", type=str, default="./data/visa_segm", help="Path to the segmentation maps")
     parser.add_argument("--output_path", type=str, default="./data/efficient_ad_output",
                         help="Path to the anomaly maps and dataframes")
@@ -43,8 +45,8 @@ def get_args():
     return parser.parse_args()
 
 
-def segad_run():
-    if not os.path.exists(args.results_path) or not os.listdir(args.results_path):
+def segad_run(full_results_path):
+    if not os.path.exists(full_results_path) or not os.listdir(full_results_path):
         logger.info("Started SegAD training and inference")
         num_components = {
             "candle": 2, "capsules": 2, "cashew": 2, "chewinggum": 2,
@@ -99,7 +101,8 @@ def segad_run():
                                     + (1 - (df_testing.loc[df_testing.label == 0, "prediction_an_det"] < thr_accept).mean())
 
                 # Detailed auroc metrics per seed
-                results_detailed[cls + str(seed)] = (cls, seed, metrics.roc_auc_score(df_testing.label, predictions))
+                results_detailed[cls + str(seed)] = (cls, seed,
+                                                     round(metrics.roc_auc_score(df_testing.label, predictions) * 100, 1))
 
             # Calculate mean metrics for all seeds
             auroc = auroc / len(SEEDS) * 100
@@ -119,19 +122,20 @@ def segad_run():
         mean_auroc_an_det = round(mean_auroc_an_det / len(CATEGORIES), 1)
         mean_fpr95tpr_an_det = round(mean_fpr95tpr_an_det / len(CATEGORIES), 1)
         results["mean"] = (mean_auroc, mean_fpr95tpr)
-        os.makedirs(args.results_path, exist_ok=True)
-        pd.DataFrame.from_dict(results, orient="index").to_csv(os.path.join(args.results_path, "results.csv"))
-        pd.DataFrame.from_dict(results_detailed, orient="index").to_csv(os.path.join(args.results_path,
+        os.makedirs(full_results_path, exist_ok=True)
+        pd.DataFrame.from_dict(results, orient="index").to_csv(os.path.join(full_results_path, "results.csv"))
+        pd.DataFrame.from_dict(results_detailed, orient="index").to_csv(os.path.join(full_results_path,
                                                                                      "results_detailed.csv"))
 
         logger.info("Finished SegAD training and inference")
-        logger.info("EfficientAD, mean Cl. AUROC: {}, mean FPR@95TPR: {}".format(mean_auroc_an_det, mean_fpr95tpr_an_det))
-        logger.info("SegAD, mean Cl. AUROC: {}, mean FPR@95TPR: {}".format(mean_auroc, mean_fpr95tpr))
+        logger.info("{}, mean Cl. AUROC: {}, mean FPR@95TPR: {}".format(args.model, mean_auroc_an_det,
+                                                                        mean_fpr95tpr_an_det))
+        logger.info("SegAD + {}, mean Cl. AUROC: {}, mean FPR@95TPR: {}".format(args.model, mean_auroc, mean_fpr95tpr))
     else:
         logger.info("Folder with results exists and not empty.")
 
 
 if __name__ == '__main__':
     args = get_args()
-
-    segad_run()
+    full_results_path = os.path.join(args.results_path, args.dataset, args.model)
+    segad_run(full_results_path)
