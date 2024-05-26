@@ -1,8 +1,7 @@
 # Supervised Anomaly Detection for Complex Industrial Images
-# Work in progress
-[VAD repository](https://github.com/abc-125/vad)
+Official code for our CVPR 2024 [paper](https://arxiv.org/abs/2405.04953)
 
-Official code for our CVPR 2024 [paper](https://arxiv.org/abs/2405.04953).
+[VAD repository](https://github.com/abc-125/vad)
 
 ## Get Started 
 
@@ -44,7 +43,7 @@ Cl. AUROC (image-level) for SegAD with different sources of anomaly maps.
 We use [EfficientAD](https://github.com/nelson1425/EfficientAD) and [Anomalib](https://github.com/openvinotoolkit/anomalib/tree/main) for baseline anomaly detection models. We are thankful for their amazing work!
 
 ## Citation
-
+Please cite this paper if it helps your project:
 ```
 @misc{baitieva2024supervised,
       title={Supervised Anomaly Detection for Complex Industrial Images}, 
