@@ -45,12 +45,10 @@ We use [EfficientAD](https://github.com/nelson1425/EfficientAD) and [Anomalib](h
 ## Citation
 Please cite this paper if it helps your project:
 ```
-@misc{baitieva2024supervised,
+@inproceedings{baitieva2024supervised,
       title={Supervised Anomaly Detection for Complex Industrial Images}, 
       author={Aimira Baitieva and David Hurych and Victor Besnier and Olivier Bernard},
-      year={2024},
-      eprint={2405.04953},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV}
+      booktitle={CVPR},
+      year={2024} 
 }
 ```
