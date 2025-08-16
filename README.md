@@ -49,6 +49,7 @@ Please cite this paper if it helps your project:
       title={Supervised Anomaly Detection for Complex Industrial Images}, 
       author={Aimira Baitieva and David Hurych and Victor Besnier and Olivier Bernard},
       booktitle={CVPR},
-      year={2024} 
+      year={2024},
+      pages={17754-17762}
 }
 ```
